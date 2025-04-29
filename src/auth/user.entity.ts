@@ -17,4 +17,4 @@ export class User {
   tasks: Task[];
 }
 
-// so now i fetch a single user with all of his tasks
+// so now i fetch a single user with all of his tasks.
