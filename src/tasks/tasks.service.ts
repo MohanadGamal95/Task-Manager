@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { TaskStatus } from './task-status.enum';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -10,6 +15,8 @@ import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class TasksService {
+  private logger = new Logger('TasksService', { timestamp: true });
+
   constructor(
     @InjectRepository(Task)
     // all methods or variables are public by default unlesss i specify otherwise so i don't need to specify "public"
@@ -31,8 +38,22 @@ export class TasksService {
         { search: `%${search}%` },
       );
     }
-    const tasks = await query.getMany();
-    return tasks;
+    try {
+      return await query.getMany();
+    } catch (error: unknown) {
+      console.log(error);
+      if (error && error instanceof Error) {
+        this.logger.error(
+          `Failed to get tasks for user "${user.username}". Filters: ${JSON.stringify(filterDto)}`,
+          error.stack,
+        );
+      }
+      throw new InternalServerErrorException();
+    }
+    /* the try catch here is not necessary you can automatically add the below
+     return query.getMany();
+    if an internal server error happened it will throw automatically
+    */
   }
 
   async getTaskById(id: string, user: User): Promise<Task> {
